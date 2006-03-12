@@ -5,7 +5,7 @@ require 'thread'
 
 LOG_COMMAND  = "/usr/bin/tail -F /var/log/auth.log"
 BLACKLIST    = "/etc/hosts.blacklist"
-MAX_FAILURES = 3
+MAX_FAILURES = 2
 TIME_LIMIT   = 30 * 60  # 30 minutes
 
 class Blacklister	
@@ -27,7 +27,7 @@ class Blacklister
 			@iplog.reject! { |ip,times| stale_entry(times)  }
 		
 			# create our blacklist
-			@iplog.each { |ip,times| badlist << ip if fresh_count(times) > MAX_FAILURES }
+			@iplog.each { |ip,times| badlist << ip if fresh_count(times) >= MAX_FAILURES }
 		end
 		badlist.sort
 	end
@@ -65,7 +65,7 @@ end
 output_thread = Thread.new do
 	list = []
 	loop do
-		sleep 2
+		sleep 1
 		new_list = blacklister.list.join("\n")
 		if new_list != list
 			File.open(BLACKLIST,"w") { |f| f.puts(new_list) }
@@ -77,5 +77,4 @@ end
 
 
 input_thread.join
-
 
